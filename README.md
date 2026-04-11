@@ -4,6 +4,71 @@
 
 FinFlow is a mock payments and transaction platform built to demonstrate common security vulnerabilities across a realistic multi-language codebase. It includes a Node.js/Express API, a React frontend, Python data processing scripts, and Terraform infrastructure — each containing deliberate security issues.
 
+Use it to test out IDE-based security tools and see how many issues they catch in real time.
+
+---
+
+## Quick Start — Clone This Repo and Scan It
+
+### Step 1: Install an IDE
+
+If you don't already have one of these, grab any of:
+
+- **VS Code**: https://code.visualstudio.com/download
+- **Cursor**: https://www.cursor.com/downloads
+- **Windsurf**: https://windsurf.com/download
+
+### Step 2: Clone this repo
+
+Open a terminal (Terminal app on Mac, Command Prompt or PowerShell on Windows) and run:
+
+```bash
+git clone https://github.com/DevSecAI/finflow-demo-app.git
+```
+
+This downloads the project to your computer. Then open it in your editor:
+
+```bash
+cd finflow-demo-app
+code .
+```
+
+(Use `cursor .` instead of `code .` if you're using Cursor.)
+
+> **Don't have Git installed?** Download it from https://git-scm.com/downloads — follow the installer, restart your terminal, then try again.
+
+### Step 3: Install ARKO
+
+ARKO is a free security extension that scans your code for vulnerabilities as you work. It runs in VS Code, Cursor, and Windsurf.
+
+**Option A — Install from inside your editor:**
+
+1. Open VS Code, Cursor, or Windsurf
+2. Go to the **Extensions** panel (click the square icon on the left sidebar, or press `Ctrl+Shift+X` / `Cmd+Shift+X`)
+3. Search for **ARKO**
+4. Click **Install**
+
+**Option B — Install directly from the marketplace:**
+
+- **VS Code**: https://marketplace.visualstudio.com/items?itemName=DevSecAI.arko
+- **Cursor / Windsurf**: https://open-vsx.org/extension/DevSecAI/arko
+
+### Step 4: Open the project and watch ARKO light up
+
+Once ARKO is installed, just open any file in the project — `backend/server.js` is a great place to start. ARKO will start highlighting security issues inline as you browse the code.
+
+Try opening these files to see different types of vulnerabilities:
+
+| File | What you'll see |
+|------|----------------|
+| `backend/server.js` | Hardcoded secrets, `eval()`, insecure CORS |
+| `backend/routes/auth.js` | SQL injection, plaintext passwords |
+| `backend/routes/transactions.js` | Broken auth (`jwt.decode` vs `jwt.verify`), IDOR |
+| `frontend/src/utils/api.js` | API keys in source code, tokens in localStorage |
+| `scripts/process_transactions.py` | Hardcoded AWS creds, pickle deserialisation, shell injection |
+| `terraform/main.tf` | Public S3 bucket, wildcard IAM, unencrypted RDS, open security groups |
+| `.github/workflows/deploy.yml` | Secrets hardcoded in CI/CD pipeline |
+
 ---
 
 ## What's Inside
