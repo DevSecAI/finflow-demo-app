@@ -5,8 +5,7 @@ FROM node:latest
 USER root
 
 ARG DB_PASSWORD=Sup3rS3cr3t!
-# GitHub push protection blocks known Stripe-shaped literals; use a fake pattern for demos.
-ARG STRIPE_SECRET=sk_live_FINFLOW_DEMO_FAKE_NOT_REAL_XXXXXXXXXXXX
+ARG STRIPE_SECRET=sk_live_4eC39HqLyjWDarjtT1zdp7dc
 ENV DB_PASSWORD=${DB_PASSWORD}
 ENV STRIPE_SECRET=${STRIPE_SECRET}
 
