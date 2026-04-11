@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Report - finflow-demo-app | Arko</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --accent:#00FF85;
+  --accent-rgb:0,255,133;
+  --purple:#818CF8;
+  --purple-rgb:129,140,248;
+  --amber:#F59E0B;
+  --amber-rgb:245,158,11;
+  --red:#EF4444;
+  --red-rgb:239,68,68;
+  --cyan:#22D3EE;
+  --bg:#030711;
+  --card:rgba(255,255,255,0.03);
+  --card-border:rgba(255,255,255,0.06);
+  --card-hover:rgba(255,255,255,0.06);
+  --text:#E2E8F0;
+  --text-muted:#94A3B8;
+  --text-dim:#64748B;
+  --radius:14px;
+  --mono:'Consolas','Courier New',monospace;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+  overflow-x:hidden;
+}
+
+/* Mesh background */
+.mesh{position:fixed;inset:0;z-index:0;filter:blur(120px);opacity:0.4;pointer-events:none}
+.blob{position:absolute;border-radius:50%}
+.blob-1{width:60vw;height:60vw;background:radial-gradient(circle,rgba(var(--accent-rgb),0.25),transparent);top:-20%;left:-15%}
+.blob-2{width:45vw;height:45vw;background:radial-gradient(circle,rgba(var(--purple-rgb),0.2),transparent);bottom:-15%;right:-10%}
+.blob-3{width:30vw;height:30vw;background:radial-gradient(circle,rgba(var(--amber-rgb),0.08),transparent);top:40%;left:50%}
+
+/* Noise overlay */
+.noise{position:fixed;inset:0;z-index:1;opacity:0.03;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.container{max-width:900px;margin:0 auto;padding:40px 24px;position:relative;z-index:2}
+
+/* Header */
+.report-header{padding:48px 0 32px;text-align:center;position:relative;z-index:2}
+.report-header svg{filter:drop-shadow(0 0 20px rgba(var(--accent-rgb),0.15));margin-bottom:16px}
+.report-project{font-family:var(--mono);font-size:13px;color:var(--text-muted);letter-spacing:0.03em}
+.report-date{font-size:12px;color:var(--text-dim);margin-top:4px}
+.header-line{width:80px;height:2px;background:linear-gradient(90deg,var(--accent),var(--purple));margin:20px auto 0;border-radius:2px}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:20px;
+  text-align:center;
+  backdrop-filter:blur(20px);
+  position:relative;
+  overflow:hidden;
+}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent)}
+.stat-value{font-size:28px;font-weight:700}
+.stat-value.critical{color:var(--red)}
+.stat-value.accent{color:var(--accent)}
+.stat-value.amber{color:var(--amber)}
+.stat-value.purple{color:var(--purple)}
+.stat-label{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-top:6px}
+
+/* Sections */
+section{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:28px;
+  margin-bottom:16px;
+  backdrop-filter:blur(20px);
+  position:relative;
+  overflow:hidden;
+}
+section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 5%,rgba(var(--accent-rgb),0.1) 30%,rgba(var(--purple-rgb),0.06) 70%,transparent 95%)}
+h2{font-size:16px;font-weight:600;color:var(--accent);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);letter-spacing:0.01em}
+h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px}
+
+/* Tags */
+.tag{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500;background:rgba(255,255,255,0.05);color:var(--text-muted);margin:2px 4px 2px 0;border:1px solid rgba(255,255,255,0.06)}
+.tag-risk{background:rgba(var(--red-rgb),0.08);color:var(--red);border-color:rgba(var(--red-rgb),0.15)}
+.tag-compliance{background:rgba(var(--purple-rgb),0.08);color:var(--purple);border-color:rgba(var(--purple-rgb),0.15)}
+
+/* Summary */
+.summary-desc{font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.7}
+
+/* Severity badges */
+.severity-badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:10px;font-weight:600;color:#030711;text-transform:uppercase;letter-spacing:0.5px}
+
+/* Vuln table */
+.vuln-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.vuln-table th{text-align:left;padding:10px 12px;background:rgba(255,255,255,0.04);color:var(--text-dim);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+.vuln-table th:first-child{border-radius:var(--radius) 0 0 0}
+.vuln-table th:last-child{border-radius:0 var(--radius) 0 0}
+.vuln-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.vuln-table tr:last-child td{border-bottom:none}
+.vuln-table tr:hover td{background:rgba(255,255,255,0.02)}
+.vuln-title{font-weight:500}
+.vuln-file{font-size:12px;color:var(--text-dim)}
+.vuln-file code{background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;font-size:11px;font-family:var(--mono)}
+
+/* Vuln cards */
+.vuln-card{border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:12px;background:rgba(255,255,255,0.01)}
+.vuln-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.vuln-card-title{font-weight:600;font-size:14px}
+.vuln-card-location{margin-bottom:8px}
+.vuln-card-location code{background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--purple);font-family:var(--mono)}
+.vuln-card p{font-size:13px;color:var(--text-muted);margin-bottom:8px}
+.vuln-rec{font-size:13px;color:var(--accent);padding:12px;background:rgba(var(--accent-rgb),0.04);border:1px solid rgba(var(--accent-rgb),0.1);border-radius:8px;margin-top:8px}
+.code-block{margin:8px 0}
+.code-block pre{background:rgba(0,0,0,0.4);color:#e2e8f0;padding:14px;border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.5;font-family:var(--mono);border:1px solid rgba(255,255,255,0.04)}
+
+/* Threats */
+.threat-section{margin-bottom:20px}
+.threat-section-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:12px}
+.threat-card{border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:10px;background:rgba(255,255,255,0.01)}
+.threat-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.threat-card-name{font-weight:600;font-size:14px}
+.threat-mitigated{font-size:11px;color:var(--accent);font-weight:600;padding:2px 10px;border-radius:99px;background:rgba(var(--accent-rgb),0.08);border:1px solid rgba(var(--accent-rgb),0.15)}
+.threat-vuln-count{font-size:11px;color:var(--red);font-weight:600;padding:2px 10px;border-radius:99px;background:rgba(var(--red-rgb),0.08);border:1px solid rgba(var(--red-rgb),0.15)}
+.threat-card p{font-size:13px;color:var(--text-muted);margin-bottom:10px}
+.threat-meta{font-size:12px;color:var(--text-dim)}
+.threat-meta div{margin-bottom:4px}
+.threat-meta strong{color:var(--text-muted)}
+
+/* Risk Assessment */
+.ra-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.ra-card{padding:16px;background:rgba(255,255,255,0.02);border-radius:10px;border:1px solid rgba(255,255,255,0.04)}
+.ra-card-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:8px}
+.ra-card-value{font-size:16px;font-weight:700}
+.ra-criticality{color:var(--amber)}
+.ra-card-tags{display:flex;flex-wrap:wrap;gap:4px}
+.muted{color:var(--text-dim);font-size:12px}
+
+/* Recommendations */
+.rec-summary-bar{margin-bottom:20px}
+.rec-summary-text{font-size:13px;color:var(--text-muted);margin-bottom:8px;display:flex;justify-content:space-between}
+.rec-bar-outer{height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden}
+.rec-bar-inner{height:100%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:99px}
+.rec-category-card{margin-bottom:20px}
+.rec-category-title{font-family:var(--mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);margin-bottom:8px}
+.rec-row{padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.rec-row:last-child{border-bottom:none}
+.rec-row-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rec-row-title{font-weight:500;font-size:13px;flex:1}
+.rec-status-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
+.rec-implemented{background:rgba(var(--accent-rgb),0.1);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.2)}
+.rec-partial{background:rgba(var(--amber-rgb),0.1);color:var(--amber);border:1px solid rgba(var(--amber-rgb),0.2)}
+.rec-missing{background:rgba(var(--red-rgb),0.1);color:var(--red);border:1px solid rgba(var(--red-rgb),0.2)}
+.urgency{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px}
+.urgency-high{background:rgba(var(--red-rgb),0.1);color:var(--red);border:1px solid rgba(var(--red-rgb),0.15)}
+.urgency-medium{background:rgba(var(--amber-rgb),0.1);color:var(--amber);border:1px solid rgba(var(--amber-rgb),0.15)}
+.urgency-low{background:rgba(var(--accent-rgb),0.06);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.1)}
+.rec-scenario{font-size:12px;color:var(--text-dim);margin-top:4px;font-style:italic}
+
+.af-list{margin-top:8px;font-size:12px}
+.af-item{padding:3px 0;color:var(--text-dim)}
+.af-item code{background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:3px;font-size:11px;font-family:var(--mono)}
+.af-enforced{color:var(--accent)}
+.af-not-enforced{color:var(--red)}
+
+/* Info columns */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.info-col ul{padding-left:20px;font-size:13px;color:var(--text-muted)}
+.info-col li{margin-bottom:6px}
+
+/* Footer */
+.report-footer{text-align:center;padding:32px;color:var(--text-dim);font-size:12px;margin-top:20px;position:relative;z-index:2}
+.report-footer a{color:var(--accent);text-decoration:none}
+
+/* Resolved items */
+.resolved-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px}
+.resolved-item:last-child{border-bottom:none}
+.resolved-title{font-weight:500;flex:1}
+.resolved-file{background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;font-size:11px;font-family:var(--mono);color:var(--text-dim)}
+
+@media print{
+  body{background:#030711!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .mesh,.noise{display:none}
+  .severity-badge,.rec-status-badge,.urgency,.threat-mitigated,.threat-vuln-count{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  section{break-inside:avoid}
+}
+@media(max-width:700px){
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .ra-grid{grid-template-columns:1fr}
+  .info-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="mesh">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+</div>
+<div class="noise"></div>
+
+<div class="report-header">
+    <svg width="200" height="54" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+        <text x="300" y="115" font-family="Sora,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-weight="600" font-size="120" text-anchor="middle">
+            <tspan fill="#41DC7A">AR</tspan><tspan dx="2" fill="#FFFFFF">K</tspan><tspan dx="2" fill="#FFFFFF">O</tspan>
+        </text>
+    </svg>
+    <div class="report-project">finflow-demo-app</div>
+    <div class="report-date">April 11, 2026 at 04:44 UTC &middot; 2m 56s</div>
+    <div class="header-line"></div>
+</div>
+
+<div class="container">
+
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-value critical">29</div>
+            <div class="stat-label">Vulnerabilities</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value critical">24</div>
+            <div class="stat-label">Critical</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value amber">5</div>
+            <div class="stat-label">High</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value accent">0%</div>
+            <div class="stat-label">Controls Secured</div>
+        </div>
+    </div>
+
+    <section>
+                <h2>Risk Assessment</h2>
+                <div class="ra-grid">
+                    <div class="ra-card">
+                        <div class="ra-card-label">Criticality</div>
+                        <div class="ra-card-value ra-criticality">MISSION CRITICAL</div>
+                    </div>
+                    <div class="ra-card">
+                        <div class="ra-card-label">Sensitive Data Types</div>
+                        <div class="ra-card-tags"><span class="tag tag-risk">PII (Personal Info)</span><span class="tag tag-risk">Credentials/Secrets</span><span class="tag tag-risk">Financial Data</span></div>
+                    </div>
+                    <div class="ra-card">
+                        <div class="ra-card-label">Application Flows</div>
+                        <div class="ra-card-tags"><span class="tag">Sessions</span><span class="tag">Authentication</span><span class="tag">user_registration</span><span class="tag">Data Export</span><span class="tag">Admin Ops</span><span class="tag">password_reset</span><span class="tag">Payment</span></div>
+                    </div>
+                    <div class="ra-card">
+                        <div class="ra-card-label">Compliance</div>
+                        <div class="ra-card-tags"><span class="tag tag-compliance">PCI_DSS</span><span class="tag tag-compliance">ISO27001</span><span class="tag tag-compliance">GDPR</span><span class="tag tag-compliance">SOC2</span><span class="tag tag-compliance">CCPA</span></div>
+                    </div>
+                </div>
+            </section>
+
+    <section>
+        <h2>Application Summary</h2>
+        <p class="summary-desc">A financial transaction management application with user authentication, transaction history tracking, and administrative query capabilities. Built with Express backend and React frontend, using SQLite for data persistence and JWT for authentication.</p>
+        <h3>Technology Stack</h3>
+        <div style="margin-bottom:16px"><span class="tag">Express.js</span><span class="tag">React</span><span class="tag">SQLite</span><span class="tag">JWT</span><span class="tag">Docker</span><span class="tag">AWS SDK</span><span class="tag">Stripe</span><span class="tag">Terraform</span></div>
+        <div class="info-grid" style="margin-top:16px"><div class="info-col">
+                <h3>Data Flows</h3>
+                <ul><li>User input enters via REST API endpoints (/register, /login, /transfer, /query, /export)</li><li>Authentication via JWT tokens passed in request headers</li><li>Data processed through Express route handlers with minimal validation</li><li>Data stored in SQLite database with direct SQL query concatenation</li><li>Data retrieved and returned in JSON responses to frontend</li><li>Administrative exports via shell command execution with user-supplied parameters</li></ul>
+            </div><div class="info-col">
+                <h3>Attack Surface</h3>
+                <ul><li>POST /register - User registration with no email validation or rate limiting</li><li>POST /login - Authentication endpoint vulnerable to SQL injection</li><li>POST /reset-password - Predictable token generation and indefinite validity</li><li>POST /transfer - Transaction creation with IDOR and SQL injection vulnerabilities</li><li>PUT /update/:id - Transaction modification without ownership verification</li><li>GET /history/:userId - Transaction history accessible to any authenticated user</li><li>POST /query - Arbitrary SQL execution endpoint for admins</li><li>POST /export - Shell command injection via filename/format parameters</li><li>GET /user/:id - User data retrieval without authorization checks</li><li>POST /api/calculate - Unauthenticated endpoint with eval() on user input</li><li>File upload handlers (2 detected) - No validation details provided</li><li>JWT token handling - 30-day expiry, full user object in responses</li></ul>
+            </div></div>
+    </section>
+
+    <section>
+        <h2>Threat Model</h2>
+        <div class="threat-section">
+                <h3 class="threat-section-title">Worst Case Scenarios</h3>
+                <div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">Complete Financial Database Breach</span>
+                        <span class="threat-vuln-count">12 vulnerabilities found</span>
+                    </div>
+                    <p>Attacker gains full access to all user financial data, transaction histories, account balances, and personal information through SQL injection vulnerabilities in multiple endpoints</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Massive financial fraud, identity theft affecting all users, regulatory fines (PCI DSS, GDPR), complete loss of customer trust, potential bankruptcy from lawsuits and compliance penalties</div>
+                        <div><strong>Attack Vector:</strong> Exploit SQL injection in /login, /transfer, or /query endpoints to dump entire database, then use transaction data for fraudulent transfers or sell data on dark web</div>
+                    </div>
+                </div><div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">Administrative System Takeover</span>
+                        <span class="threat-vuln-count">9 vulnerabilities found</span>
+                    </div>
+                    <p>Attacker achieves full administrative control through shell command injection, allowing complete system compromise and persistent backdoor installation</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Total system control, ability to manipulate all financial records, install malware, pivot to other systems, complete business disruption</div>
+                        <div><strong>Attack Vector:</strong> Use shell command injection in /export endpoint to execute arbitrary commands, escalate privileges, install backdoors, and maintain persistent access</div>
+                    </div>
+                </div><div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">Mass Fraudulent Transaction Campaign</span>
+                        <span class="threat-vuln-count">3 vulnerabilities found</span>
+                    </div>
+                    <p>Attacker exploits IDOR vulnerabilities and weak authentication to perform unauthorized transfers from multiple user accounts simultaneously</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Millions in fraudulent transfers, user account draining, regulatory investigation, potential criminal charges, complete loss of financial license</div>
+                        <div><strong>Attack Vector:</strong> Exploit IDOR in /transfer and /update endpoints combined with JWT token manipulation to perform transfers from any user account to attacker-controlled accounts</div>
+                    </div>
+                </div>
+            </div><div class="threat-section">
+                <h3 class="threat-section-title">Likely Attack Scenarios</h3>
+                <div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">User Account Takeover via SQL Injection</span>
+                        <span class="threat-mitigated">Mitigated</span>
+                    </div>
+                    <p>Attacker bypasses authentication through SQL injection in login endpoint to access individual user accounts</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Unauthorized access to user financial data, ability to perform transactions, identity theft, user trust erosion</div>
+                        <div><strong>Attack Vector:</strong> Inject malicious SQL in login form to bypass password verification and obtain valid JWT tokens for target accounts</div>
+                    </div>
+                </div><div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">Arbitrary Code Execution via Calculate Endpoint</span>
+                        <span class="threat-vuln-count">2 vulnerabilities found</span>
+                    </div>
+                    <p>Attacker exploits eval() function in unauthenticated /api/calculate endpoint to execute malicious JavaScript code</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Server compromise, data theft, denial of service, potential lateral movement to other systems</div>
+                        <div><strong>Attack Vector:</strong> Send crafted payloads to /api/calculate endpoint containing malicious JavaScript that gets executed via eval(), allowing file system access and command execution</div>
+                    </div>
+                </div><div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">Sensitive Data Exposure via IDOR</span>
+                        <span class="threat-vuln-count">1 vulnerabilities found</span>
+                    </div>
+                    <p>Attacker accesses other users&#x27; transaction histories and personal data by manipulating user IDs in API requests</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Privacy violations, competitive intelligence theft, regulatory compliance issues, user data monetization by attackers</div>
+                        <div><strong>Attack Vector:</strong> Enumerate user IDs in /history/:userId and /user/:id endpoints to access financial records and personal information of other users</div>
+                    </div>
+                </div><div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">Brute Force Authentication Attacks</span>
+                        <span class="threat-vuln-count">2 vulnerabilities found</span>
+                    </div>
+                    <p>Attacker performs automated credential stuffing and brute force attacks against login endpoint with no rate limiting</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Account compromises, service degradation, increased infrastructure costs, user lockouts</div>
+                        <div><strong>Attack Vector:</strong> Use automated tools to attempt thousands of login combinations against /login endpoint, leveraging common passwords and leaked credential databases</div>
+                    </div>
+                </div><div class="threat-card">
+                    <div class="threat-card-header">
+                        <span class="threat-card-name">Malicious File Upload Exploitation</span>
+                        <span class="threat-mitigated">Mitigated</span>
+                    </div>
+                    <p>Attacker uploads malicious files through unvalidated file upload handlers to achieve code execution or data exfiltration</p>
+                    <div class="threat-meta">
+                        <div><strong>Impact:</strong> Server compromise, malware distribution, data theft, website defacement, denial of service</div>
+                        <div><strong>Attack Vector:</strong> Upload executable files, web shells, or malicious scripts through file upload endpoints, then access uploaded files to execute malicious code on the server</div>
+                    </div>
+                </div>
+            </div>
+    </section>
+
+    <section>
+                <h2>Security Recommendations</h2>
+                <div class="rec-summary-bar">
+                    <div class="rec-summary-text">
+                        <span>0 of 12 controls secured</span>
+                        <span>0%</span>
+                    </div>
+                    <div class="rec-bar-outer"><div class="rec-bar-inner" style="width:0%"></div></div>
+                </div>
+                <div class="rec-category-card">
+                    <div class="rec-category-title">Login &amp; Passwords</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Your passwords could be stolen in a breach</span>
+                            <span class="urgency urgency-high">Fix Now</span>
+                        </div>
+                        <div class="rec-scenario">If your database leaks, attackers crack plain-text passwords in minutes</div>
+                        <div class="af-list"><div class="af-item af-not-enforced">&#10007; <code>backend/routes/auth.js:38</code> - Passwords stored in plaintext - no hashing implemented</div></div>
+                    </div><div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Implement Multi-Factor Authentication (MFA)</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        
+                        
+                    </div>
+                </div><div class="rec-category-card">
+                    <div class="rec-category-title">Access Control</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Implement Resource-Level Authorization</span>
+                            <span class="urgency urgency-high">Fix Now</span>
+                        </div>
+                        
+                        <div class="af-list"><div class="af-item "> <code>backend/routes/auth.js</code> - File should implement: Implement Resource-Level Authorization</div><div class="af-item "> <code>backend/routes/transactions.js</code> - File should implement: Implement Resource-Level Authorization</div><div class="af-item "> <code>backend/routes/admin.js</code> - File should implement: Implement Resource-Level Authorization</div></div>
+                    </div>
+                </div><div class="rec-category-card">
+                    <div class="rec-category-title">Encryption</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Use Strong Cryptographic Algorithms</span>
+                            <span class="urgency urgency-high">Fix Now</span>
+                        </div>
+                        
+                        <div class="af-list"><div class="af-item "> <code>backend/routes/auth.js:38</code> - Potential insecure pattern found - Use Strong Cryptographic Algorithms</div><div class="af-item "> <code>scripts/process_transactions.py:23</code> - Potential insecure pattern found - Use Strong Cryptographic Algorithms</div><div class="af-item "> <code>backend/routes/auth.js:38</code> - Potential insecure pattern found - Use Strong Cryptographic Algorithms</div></div>
+                    </div>
+                </div><div class="rec-category-card">
+                    <div class="rec-category-title">Display Safety</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Other users could see a fake version of your app</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        <div class="rec-scenario">An attacker injects JavaScript that steals cookies and session tokens from your users</div>
+                        <div class="af-list"><div class="af-item af-not-enforced">&#10007; <code>frontend/src/components/Dashboard.jsx:19</code> - Unsafe: `// XSS via URL parameter — dangerouslySetInnerHTML with unsanitised input`</div><div class="af-item af-not-enforced">&#10007; <code>frontend/src/components/Dashboard.jsx:38</code> - Unsafe: `{/* XSS — dangerouslySetInnerHTML with unescaped user-controlled content */}`</div><div class="af-item af-not-enforced">&#10007; <code>frontend/src/components/Dashboard.jsx:42</code> - Unsafe: `dangerouslySetInnerHTML={{ __html: notification }}`</div><div class="af-item af-not-enforced">&#10007; <code>frontend/src/components/Dashboard.jsx:42</code> - Unsafe: `dangerouslySetInnerHTML={{ __html: notification }}`</div></div>
+                    </div><div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Prevent Cross-Site Scripting (XSS)</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        
+                        <div class="af-list"><div class="af-item "> <code>frontend/src/components/Dashboard.jsx:19</code> - Potential insecure pattern found - Prevent Cross-Site Scripting (XSS)</div><div class="af-item "> <code>frontend/src/components/Dashboard.jsx:42</code> - Potential insecure pattern found - Prevent Cross-Site Scripting (XSS)</div></div>
+                    </div>
+                </div><div class="rec-category-card">
+                    <div class="rec-category-title">User Sessions</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Configure Secure Session Settings</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        
+                        <div class="af-list"><div class="af-item "> <code>backend/middleware/auth.js</code> - File should implement: Configure Secure Session Settings</div></div>
+                    </div><div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Attackers could impersonate your users</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        <div class="rec-scenario">A stolen or forged JWT token lets someone log in as any user without knowing their password</div>
+                        <div class="af-list"><div class="af-item af-not-enforced">&#10007; <code>backend/routes/transactions.js:15</code> - Uses jwt.decode() instead of jwt.verify() - no signature validation</div></div>
+                    </div>
+                </div><div class="rec-category-card">
+                    <div class="rec-category-title">App Settings</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-partial">Partial</span>
+                            <span class="rec-row-title">Your API keys could end up on GitHub</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        <div class="rec-scenario">Hardcoded secrets in code get committed and scraped by bots within minutes</div>
+                        <div class="af-list"><div class="af-item af-not-enforced">&#10007; <code>backend/routes/auth.js:11</code> - Unsafe: `const query = `SELECT * FROM users WHERE username = &#x27;${username}&#x27; AND password = &#x27;${password}&#x27;`;`</div><div class="af-item af-enforced">&#10003; <code>scripts/process_transactions.py:89</code> - Found: `rates = fetch_exchange_rates(os.environ.get(&#x27;RATES_URL&#x27;, &#x27;http://api.exchangerate.host/latest&#x27;))`</div><div class="af-item af-enforced">&#10003; <code>scripts/process_transactions.py:93</code> - Found: `report_name = os.environ.get(&#x27;REPORT_NAME&#x27;, &#x27;daily_report&#x27;)`</div><div class="af-item af-enforced">&#10003; <code>backend/server.js:80</code> - Found: `const PORT = process.env.PORT || 3001;`</div><div class="af-item af-not-enforced">&#10007; <code>backend/server.js:20</code> - Unsafe: `const DB_PASSWORD = &#x27;Admin1234!&#x27;;`</div></div>
+                    </div><div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Implement Security Headers</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        
+                        <div class="af-list"><div class="af-item "> <code>backend/middleware/auth.js</code> - File should implement: Implement Security Headers</div><div class="af-item "> <code>backend/server.js</code> - File should implement: Implement Security Headers</div></div>
+                    </div>
+                </div><div class="rec-category-card">
+                    <div class="rec-category-title">Protecting Data</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Mask Sensitive Data in Logs and Error Messages</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        
+                        <div class="af-list"><div class="af-item "> <code>scripts/process_transactions.py:79</code> - Potential insecure pattern found - Mask Sensitive Data in Logs and Error Messages</div><div class="af-item "> <code>frontend/src/utils/api.js:17</code> - Potential insecure pattern found - Mask Sensitive Data in Logs and Error Messages</div><div class="af-item "> <code>scripts/process_transactions.py:79</code> - Potential insecure pattern found - Mask Sensitive Data in Logs and Error Messages</div></div>
+                    </div>
+                </div><div class="rec-category-card">
+                    <div class="rec-category-title">Error Handling</div>
+                    <div class="rec-row">
+                        <div class="rec-row-header">
+                            <span class="rec-status-badge rec-missing">Missing</span>
+                            <span class="rec-row-title">Implement Safe Error Handling</span>
+                            <span class="urgency urgency-medium">Fix Soon</span>
+                        </div>
+                        
+                        <div class="af-list"><div class="af-item "> <code>backend/middleware/auth.js</code> - File should implement: Implement Safe Error Handling</div></div>
+                    </div>
+                </div>
+            </section>
+
+    <section>
+        <h2>Open Vulnerabilities (29)</h2>
+        <table class="vuln-table"><thead><tr><th>Severity</th><th>Title</th><th>Location</th></tr></thead><tbody><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Arbitrary Code Execution via eval() on User Input</td>
+                <td class="vuln-file"><code>backend/server.js:59</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">JWT Signature Verification Bypass via jwt.decode()</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:13</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Arbitrary SQL Execution via /query Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:42</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Shell Command Injection in /export Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:25</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in Transaction Update Endpoint via Mass Assignment</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:58</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in Transaction History Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:27</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Authentication Bypass - Fails Open on Token Verification Failure</td>
+                <td class="vuln-file"><code>backend/middleware/auth.js:8</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">JWT Token Forgery via Unverified Decode</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:13</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">JWT Signature Not Verified - Authentication Bypass</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:15</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Stored XSS via URL Parameter in dangerouslySetInnerHTML</td>
+                <td class="vuln-file"><code>frontend/src/components/Dashboard.jsx:42</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Insecure Deserialization via pickle.load() on untrusted cache files</td>
+                <td class="vuln-file"><code>scripts/process_transactions.py:35</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in get_user_report() via username parameter</td>
+                <td class="vuln-file"><code>scripts/process_transactions.py:46</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Command Injection via Shell Metacharacters in report_name</td>
+                <td class="vuln-file"><code>scripts/process_transactions.py:30</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Command Injection via Filename Parameter</td>
+                <td class="vuln-file"><code>scripts/user_import.py:47</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Unsafe YAML Deserialization - Arbitrary Code Execution</td>
+                <td class="vuln-file"><code>scripts/user_import.py:41</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in User Import Script</td>
+                <td class="vuln-file"><code>scripts/user_import.py:28</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Arbitrary Code Execution via eval()</td>
+                <td class="vuln-file"><code>backend/server.js:59</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">Arbitrary SQL Execution Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:44</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in User Lookup Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:34</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">OS Command Injection via Shell Metacharacters</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:25</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection and IDOR in Transaction Update Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:61</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in Transfer Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:43</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in Registration Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/auth.js:39</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#EF4444">CRITICAL</span></td>
+                <td class="vuln-title">SQL Injection in Login Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/auth.js:11</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#F59E0B">HIGH</span></td>
+                <td class="vuln-title">CORS Misconfiguration Allows Any Origin</td>
+                <td class="vuln-file"><code>backend/server.js:10</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#F59E0B">HIGH</span></td>
+                <td class="vuln-title">SQL Injection in /user/:id Endpoint</td>
+                <td class="vuln-file"><code>backend/routes/admin.js:34</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#F59E0B">HIGH</span></td>
+                <td class="vuln-title">IDOR: No Ownership Verification in Transaction Update</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:52</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#F59E0B">HIGH</span></td>
+                <td class="vuln-title">IDOR: No Ownership Verification in Transaction History</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:23</code></td>
+            </tr><tr>
+                <td><span class="severity-badge" style="background:#F59E0B">HIGH</span></td>
+                <td class="vuln-title">IDOR - Unrestricted Access to User Transaction History</td>
+                <td class="vuln-file"><code>backend/routes/transactions.js:23</code></td>
+            </tr></tbody></table>
+    </section>
+
+    <section><h2>Vulnerability Details</h2><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Arbitrary Code Execution via eval() on User Input</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/server.js:59</code></div>
+                <p>The /api/calculate endpoint uses eval() directly on user-supplied formula input without any validation, sanitization, or authentication. This allows unauthenticated attackers to execute arbitrary JavaScript code on the server.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Remove eval() entirely, use a safe math expression parser, add authentication</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">JWT Signature Verification Bypass via jwt.decode()</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:13</code></div>
+                <p>The adminOnly middleware uses jwt.decode() instead of jwt.verify(). The decode() function does NOT verify the JWT signature, allowing attackers to forge arbitrary tokens with admin role claims.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Replace jwt.decode() with jwt.verify() using proper secret</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Arbitrary SQL Execution via /query Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:42</code></div>
+                <p>The /query endpoint accepts raw SQL from request body and executes it directly without any validation or parameterization. Combined with the forged JWT vulnerability, this allows complete database compromise.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Remove this endpoint entirely - never allow arbitrary SQL execution</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Shell Command Injection in /export Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:25</code></div>
+                <p>User-supplied filename and format parameters are directly concatenated into a shell command executed via exec(). An attacker can inject shell metacharacters to execute arbitrary commands on the server.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Validate and sanitize filename/format, use safe file operations instead of shell commands</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in Transaction Update Endpoint via Mass Assignment</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:58</code></div>
+                <p>Request body keys and values are used directly in UPDATE query without sanitization or parameterization. Allows arbitrary SQL injection and field modification.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Whitelist allowed fields and use parameterized queries</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in Transaction History Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:27</code></div>
+                <p>The userId parameter from URL is concatenated directly into SQL query without parameterization. Combined with broken authentication, allows SQL injection attacks.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries with placeholders</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Authentication Bypass - Fails Open on Token Verification Failure</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/middleware/auth.js:8</code></div>
+                <p>The verifyToken middleware silently proceeds when token verification fails or when no token is provided.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Return 401/403 errors instead of calling next() on authentication failures</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">JWT Token Forgery via Unverified Decode</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:13</code></div>
+                <p>The adminOnly middleware uses jwt.decode() instead of jwt.verify(), allowing forged admin tokens.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use jwt.verify(token, JWT_SECRET) to validate signature</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">JWT Signature Not Verified - Authentication Bypass</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:15</code></div>
+                <p>Authentication middleware uses jwt.decode() instead of jwt.verify(), which does not validate the signature.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use jwt.verify(token, JWT_SECRET) instead of jwt.decode()</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Stored XSS via URL Parameter in dangerouslySetInnerHTML</span>
+                </div>
+                <div class="vuln-card-location"><code>frontend/src/components/Dashboard.jsx:42</code></div>
+                <p>Unsanitized &#x27;message&#x27; URL parameter directly injected into DOM using dangerouslySetInnerHTML.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Sanitize HTML content or use textContent instead of dangerouslySetInnerHTML</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Insecure Deserialization via pickle.load() on untrusted cache files</span>
+                </div>
+                <div class="vuln-card-location"><code>scripts/process_transactions.py:35</code></div>
+                <p>Uses pickle.load() on cache files without validation. Pickle deserialization allows arbitrary code execution.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use JSON or other safe serialization formats, never pickle for untrusted data</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in get_user_report() via username parameter</span>
+                </div>
+                <div class="vuln-card-location"><code>scripts/process_transactions.py:46</code></div>
+                <p>Direct string interpolation in SQL query construction without parameterization.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries with cursor.execute(&#x27;SELECT * FROM transactions WHERE from_user = ? OR to_user = ?&#x27;, (username, username))</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Command Injection via Shell Metacharacters in report_name</span>
+                </div>
+                <div class="vuln-card-location"><code>scripts/process_transactions.py:30</code></div>
+                <p>User-controlled report_name parameter used in shell command with subprocess.call(shell=True).</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use subprocess without shell=True, validate report_name against whitelist</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Command Injection via Filename Parameter</span>
+                </div>
+                <div class="vuln-card-location"><code>scripts/user_import.py:47</code></div>
+                <p>User-controlled filename passed directly to os.system() without sanitization or escaping.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use subprocess with array arguments, validate filename against whitelist</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Unsafe YAML Deserialization - Arbitrary Code Execution</span>
+                </div>
+                <div class="vuln-card-location"><code>scripts/user_import.py:41</code></div>
+                <p>Uses yaml.load() with Loader=yaml.Loader instead of yaml.safe_load(), allowing arbitrary Python code execution through YAML deserialization.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use yaml.safe_load() instead of yaml.load()</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in User Import Script</span>
+                </div>
+                <div class="vuln-card-location"><code>scripts/user_import.py:28</code></div>
+                <p>User input from CSV file is directly interpolated into SQL query using f-string without parameterization.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries: cursor.execute(&#x27;INSERT INTO users VALUES (?, ?, 0, &quot;user&quot;)&#x27;, (username, password))</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Arbitrary Code Execution via eval()</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/server.js:59</code></div>
+                <p>The /api/calculate endpoint uses eval() to execute user-supplied formula strings with no authentication required.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use a safe math expression parser like math.js or remove eval() entirely</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">Arbitrary SQL Execution Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:44</code></div>
+                <p>The /query endpoint accepts raw SQL from the request body and executes it directly without any validation or parameterization.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Remove this endpoint entirely or implement strict query whitelisting</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in User Lookup Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:34</code></div>
+                <p>The &#x27;id&#x27; parameter from URL is directly concatenated into a SQL query without parameterization.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries: db.get(&#x27;SELECT * FROM users WHERE id = ?&#x27;, [id])</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">OS Command Injection via Shell Metacharacters</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:25</code></div>
+                <p>User-supplied &#x27;filename&#x27; parameter is directly interpolated into a shell command executed via child_process.exec().</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use child_process.execFile with array arguments, validate filename against whitelist</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection and IDOR in Transaction Update Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:61</code></div>
+                <p>PUT /update/:id endpoint accepts arbitrary fields from request body and concatenates them into UPDATE query without parameterization or validation.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries and validate/whitelist allowed fields</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in Transfer Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:43</code></div>
+                <p>User-supplied toUser parameter is concatenated directly into SQL INSERT query without parameterization.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries for all database operations</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in Registration Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/auth.js:39</code></div>
+                <p>User-supplied username and password are concatenated directly into INSERT query without parameterization.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries for INSERT statements</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#EF4444">CRITICAL</span>
+                    <span class="vuln-card-title">SQL Injection in Login Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/auth.js:11</code></div>
+                <p>User-supplied username and password are concatenated directly into SQL query without parameterization. Attacker can inject SQL syntax to bypass authentication.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries: db.get(&#x27;SELECT * FROM users WHERE username = ? AND password = ?&#x27;, [username, password])</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#F59E0B">HIGH</span>
+                    <span class="vuln-card-title">CORS Misconfiguration Allows Any Origin</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/server.js:10</code></div>
+                <p>CORS is configured to allow requests from any origin (&#x27;*&#x27;). Combined with the eval() vulnerability and hardcoded JWT secret, this enables cross-origin attacks from malicious websites to exploit the application.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Configure CORS to allow only trusted origins</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#F59E0B">HIGH</span>
+                    <span class="vuln-card-title">SQL Injection in /user/:id Endpoint</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/admin.js:34</code></div>
+                <p>The user ID from URL parameter is directly interpolated into SQL query without parameterization. An attacker can inject SQL to extract arbitrary data from the database.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> Use parameterized queries for URL parameters</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#F59E0B">HIGH</span>
+                    <span class="vuln-card-title">IDOR: No Ownership Verification in Transaction Update</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:52</code></div>
+                <p>The /update/:id endpoint allows any user to modify any transaction by ID without verifying ownership. Combined with mass assignment vulnerability, attackers can modify arbitrary fields of any transaction including amounts, users, and timestamps.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> 1. Add ownership verification: JOIN with users table to verify req.user.id owns the transaction 2. Implement field whitelisting instead of mass assignment 3. Fix authentication middleware to properly validate JWT signatures</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#F59E0B">HIGH</span>
+                    <span class="vuln-card-title">IDOR: No Ownership Verification in Transaction History</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:23</code></div>
+                <p>The /history/:userId endpoint allows any user (including unauthenticated guests) to view transaction history of any other user by manipulating the userId parameter in the URL. The looseyAuth middleware fails open and uses jwt.decode() instead of jwt.verify(), meaning tokens are not cryptographically validated.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> 1. Fix looseyAuth to use jwt.verify() with proper signature validation 2. Add ownership check: WHERE (from_user = ${userId} OR to_user = ${userId}) AND (from_user = ${req.user.id} OR to_user = ${req.user.id}) 3. Reject requests without valid authentication</div>
+            </div><div class="vuln-card">
+                <div class="vuln-card-header">
+                    <span class="severity-badge" style="background:#F59E0B">HIGH</span>
+                    <span class="vuln-card-title">IDOR - Unrestricted Access to User Transaction History</span>
+                </div>
+                <div class="vuln-card-location"><code>backend/routes/transactions.js:23</code></div>
+                <p>The /history/:userId endpoint accepts userId from URL parameter without verifying the requesting user owns that account. Combined with broken JWT verification in looseyAuth middleware, any user can access any other user&#x27;s transaction history.</p>
+                
+                <div class="vuln-rec"><strong>Recommendation:</strong> 1. Fix looseyAuth to use jwt.verify() with proper secret validation 2. Add authorization check: if (req.user.id !== parseInt(userId)) return 403 3. Consider removing userId from URL and using authenticated user&#x27;s ID instead</div>
+            </div></section>
+
+    
+
+    
+
+</div>
+
+<div class="report-footer">
+    <svg width="80" height="22" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-bottom:2px">
+        <text x="300" y="115" font-family="Sora,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-weight="600" font-size="120" text-anchor="middle">
+            <tspan fill="#41DC7A">AR</tspan><tspan dx="2" fill="#FFFFFF">K</tspan><tspan dx="2" fill="#FFFFFF">O</tspan>
+        </text>
+    </svg>
+    <span style="margin-left:6px">AI-powered security analysis</span>
+</div>
+
+</body>
+</html>
