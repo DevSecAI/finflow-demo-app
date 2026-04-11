@@ -1,10 +1,10 @@
 # FinFlow Demo App — Intentionally Vulnerable Fintech Application
 
-> ⚠️ **This application is intentionally insecure.** It is designed for security education and tooling demonstrations only. **Never deploy this to a real environment.**
+> ⚠️ **This application is intentionally insecure.** It is designed for security education and for **testing with Arko** in your IDE. **Never deploy this to a real environment.**
 
 FinFlow is a mock payments and transaction platform built to demonstrate common security vulnerabilities across a realistic multi-language codebase. It includes a Node.js/Express API, a React frontend, Python data processing scripts, and Terraform infrastructure — each containing deliberate security issues.
 
-Use it to test out IDE-based security tools and see how many issues they catch in real time.
+Open the project with **Arko** installed to see how many issues it flags while you browse the code.
 
 ---
 
@@ -37,15 +37,15 @@ code .
 
 > **Don't have Git installed?** Download it from https://git-scm.com/downloads — follow the installer, restart your terminal, then try again.
 
-### Step 3: Install ARKO
+### Step 3: Install Arko
 
-ARKO is a free security extension that scans your code for vulnerabilities as you work. It runs in VS Code, Cursor, and Windsurf.
+Arko is a free security extension that scans your code for vulnerabilities as you work. It runs in VS Code, Cursor, and Windsurf.
 
 **Option A — Install from inside your editor:**
 
 1. Open VS Code, Cursor, or Windsurf
 2. Go to the **Extensions** panel (click the square icon on the left sidebar, or press `Ctrl+Shift+X` / `Cmd+Shift+X`)
-3. Search for **ARKO**
+3. Search for **Arko**
 4. Click **Install**
 
 **Option B — Install directly from the marketplace:**
@@ -53,9 +53,9 @@ ARKO is a free security extension that scans your code for vulnerabilities as yo
 - **VS Code**: https://marketplace.visualstudio.com/items?itemName=DevSecAI.arko
 - **Cursor / Windsurf**: https://open-vsx.org/extension/DevSecAI/arko
 
-### Step 4: Open the project and watch ARKO light up
+### Step 4: Open the project and watch Arko light up
 
-Once ARKO is installed, just open any file in the project — `backend/server.js` is a great place to start. ARKO will start highlighting security issues inline as you browse the code.
+Once Arko is installed, just open any file in the project — `backend/server.js` is a great place to start. Arko will start highlighting security issues inline as you browse the code.
 
 Try opening these files to see different types of vulnerabilities:
 
