@@ -1,0 +1,33 @@
+name: FinFlow Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: cd backend && npm install
+
+      # Hardcoded secrets in CI config — should use GitHub Secrets
+      - name: Deploy to production
+        env:
+          AWS_ACCESS_KEY_ID: AKIAIOSFODNN7FINFLOW1
+          AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYFINFLOWKEY
+          DB_PASSWORD: Sup3rS3cr3t!
+          STRIPE_SECRET: FINFLOW_DEMO_USE_ENV_NOT_A_REAL_STRIPE_KEY
+          JWT_SECRET: finflow_super_secret_key_2024
+        run: |
+          echo "Deploying with DB_PASSWORD=$DB_PASSWORD"
+          cd terraform && terraform init && terraform apply -auto-approve
+
+      # No branch protection, no required approvals, auto-approve to production
+      - name: Run database migrations
+        run: |
+          # Running migrations as root with full DB access
+          PGPASSWORD=Sup3rS3cr3t! psql -h finflow-prod.rds.amazonaws.com -U finflow_admin -d finflow -f migrations/latest.sql
