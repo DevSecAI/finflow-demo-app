@@ -44,7 +44,7 @@ def load_config(config_path: str) -> dict:
 # Command injection via filename
 def process_uploaded_file(filename: str) -> None:
     # Never pass user filenames directly to shell commands
-    os.system(f"python3 /scripts/validate.py {filename}")
+    subprocess.run(['python3', '/scripts/validate.py', filename], check=True)
 
 # Overly permissive file write — no path traversal protection
 def save_user_avatar(username: str, file_content: bytes, upload_dir: str = '/uploads') -> str:
