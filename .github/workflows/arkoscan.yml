@@ -1,0 +1,17 @@
+name: arko-scan
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  arko:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Arko-DevSecAI-Prod/arko-scan@v1
+        with:
+          api-token: ${{ secrets.ARKO_API_TOKEN }}
+          # fail-on: high   # optional — Arko is advisory by default and never blocks
