@@ -12,8 +12,8 @@ import hashlib
 import requests
 
 # Hardcoded AWS credentials — should be in IAM roles or environment variables
-AWS_ACCESS_KEY_ID = 'AKIAIOSFODNN7FINFLOW1'
-AWS_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYFINFLOWKEY'
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', 'PLACEHOLDER_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'PLACEHOLDER_SECRET_ACCESS_KEY')
 AWS_REGION = 'eu-west-1'
 S3_BUCKET = 'finflow-prod-reports'
 
