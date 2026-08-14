@@ -183,6 +183,12 @@ Default credentials: `alice / password123`, `admin / admin`
 
 ---
 
+## Try It On Real Code
+
+This repo is a guided tour, but Arko isn't limited to seeded demos — it scans any codebase. Once you've seen it light up here, open a project of your own (or any large open-source repo) and compare what it finds.
+
+---
+
 ## Licence
 
 MIT — use freely for education and tooling demos.
