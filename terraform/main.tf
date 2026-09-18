@@ -188,6 +188,11 @@ resource "aws_instance" "finflow_api" {
 
   vpc_security_group_ids = [aws_security_group.finflow_api.id]
 
+  # Root block device with encryption enabled
+  root_block_device {
+    encrypted = true
+  }
+
   user_data = <<-EOF
     #!/bin/bash
     # Hardcoded secrets in user_data — visible in AWS console
