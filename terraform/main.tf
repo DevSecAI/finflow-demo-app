@@ -123,7 +123,10 @@ resource "aws_db_instance" "finflow_postgres" {
   # No multi-AZ for production database
   multi_az = false
 
-  # No performance insights, no enhanced monitoring
+  # Performance insights enabled for monitoring and diagnostics
+  enabled_cloudwatch_logs_exports = []
+  performance_insights_enabled    = true
+
   vpc_security_group_ids = [aws_security_group.finflow_db.id]
 
   skip_final_snapshot = true
