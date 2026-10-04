@@ -190,10 +190,10 @@ resource "aws_instance" "finflow_api" {
 
   user_data = <<-EOF
     #!/bin/bash
-    # Hardcoded secrets in user_data — visible in AWS console
-    export DB_PASSWORD="Sup3rS3cr3t!"
-    export STRIPE_SECRET="FINFLOW_DEMO_USE_ENV_NOT_A_REAL_STRIPE_KEY"
-    export JWT_SECRET="finflow_super_secret_key_2024"
+    # Secrets retrieved from environment variables or AWS Secrets Manager
+    export DB_PASSWORD="${var.db_password}"
+    export STRIPE_SECRET="${var.stripe_secret}"
+    export JWT_SECRET="${var.jwt_secret}"
     cd /app && npm start
   EOF
 
