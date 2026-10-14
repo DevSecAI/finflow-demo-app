@@ -31,11 +31,12 @@ const Transfer = () => {
           // No maxLength, no input sanitisation
         />
         <input
-          type="text"
+          type="number"
           placeholder="Amount (£)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          // Accepts any string — not restricted to number
+          min="0.01"
+          step="0.01"
         />
         <button type="submit">Transfer</button>
       </form>
